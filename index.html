@@ -110,9 +110,6 @@
 </div>
 
 <script>
-const bnMap = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
-function bn(s){ return String(s).replace(/[0-9]/g, d => bnMap[d]); }
-
 function formatTaka(n){
   n = Math.round(Number(n) || 0);
   const neg = n < 0;
@@ -124,13 +121,13 @@ function formatTaka(n){
     rest = rest.replace(/\B(?=(\d{2})+(?!\d)$)/g, ',');
     last3 = ',' + last3;
   }
-  return (neg ? '-' : '') + bn(rest + last3) + ' টাকা';
+  return (neg ? '-' : '') + (rest + last3) + ' টাকা';
 }
 
 function formatDate(iso){
   if(!iso) return '';
   const [y,m,d] = iso.split('-');
-  return bn(`${d}/${m}/${y}`);
+  return `${d}/${m}/${y}`;
 }
 
 function escapeHtml(s){
