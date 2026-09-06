@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>নানির চিকিৎসা — খরচের হিসাব</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+
+  :root{
+    --paper:#F7F3EA;
+    --card:#FFFDF8;
+    --ink:#2A2620;
+    --ink-soft:#6b6255;
+    --rule:#ddd3bf;
+    --margin:#b3453d;
+    --teal:#1e6e62;
+    --amber:#b8792e;
+    --green:#4c7a52;
+    --red:#a6453c;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Hind Siliguri', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+  }
+  h1,h2,h3{ font-family:'Tiro Bangla', serif; font-weight:400; margin:0; }
+  .wrap{ max-width:760px; margin:0 auto; padding:28px 18px 60px; }
+
+  .hero{
+    text-align:center;
+    padding:8px 0 26px;
+    border-bottom:1px solid var(--rule);
+    margin-bottom:22px;
+  }
+  .hero .eyebrow{ color:var(--ink-soft); font-size:14px; margin-bottom:6px; }
+  .hero h1{ font-size:28px; }
+  .hero .sub{ color:var(--ink-soft); font-size:14px; margin-top:8px; }
+  .grand-total{ margin-top:20px; display:flex; justify-content:center; gap:28px; flex-wrap:wrap; }
+  .gt-item{ text-align:center; }
+  .gt-num{ font-family:'Tiro Bangla', serif; font-size:26px; color:var(--teal); }
+  .gt-label{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+
+  .khata{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-left:3px solid var(--margin);
+    border-radius:2px;
+    margin-bottom:22px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04);
+    overflow:hidden;
+  }
+  .khata-head{
+    padding:16px 18px 12px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:10px; flex-wrap:wrap;
+    border-bottom:1px dashed var(--rule);
+  }
+  .khata-title{ font-size:19px; }
+  .khata-note{ color:var(--ink-soft); font-size:13px; margin-top:3px; }
+  .pill{ font-size:12px; padding:3px 10px; border-radius:100px; border:1px solid currentColor; white-space:nowrap; }
+  .pill.open{ color:var(--amber); }
+  .pill.closed{ color:var(--green); }
+
+  .section-label{
+    font-size:12.5px; color:var(--ink-soft); font-weight:600;
+    padding:12px 18px 4px;
+  }
+
+  table{ width:100%; border-collapse:collapse; font-size:14.5px; }
+  thead th{ text-align:left; color:var(--ink-soft); font-weight:600; font-size:12.5px; padding:8px 18px 6px; }
+  thead th.amt{ text-align:right; }
+  tbody td{ padding:7px 18px; border-top:1px solid var(--rule); vertical-align:top; }
+  tbody td.date{ color:var(--ink-soft); white-space:nowrap; width:90px; font-size:13.5px; }
+  tbody td.amt{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .empty-row td{ color:var(--ink-soft); font-style:italic; text-align:center; padding:14px; }
+
+  .khata-foot{
+    display:flex; justify-content:flex-end; gap:26px;
+    padding:12px 18px 16px; flex-wrap:wrap;
+    border-top:1px solid var(--rule);
+    background:rgba(0,0,0,.012);
+  }
+  .foot-item{ text-align:right; }
+  .foot-num{ font-size:16px; font-weight:600; }
+  .foot-label{ font-size:12px; color:var(--ink-soft); }
+  .foot-num.remain{ color:var(--amber); }
+  .foot-num.deposit{ color:var(--teal); }
+
+  footer.note{
+    text-align:center; color:var(--ink-soft); font-size:12.5px;
+    margin-top:30px; padding-top:16px; border-top:1px solid var(--rule);
+  }
+  .loading{ text-align:center; padding:60px 0; color:var(--ink-soft); }
+  .last-updated{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:6px; }
+
+  @media (max-width:480px){
+    .hero h1{ font-size:23px; }
+    .gt-num{ font-size:22px; }
+    thead th, tbody td{ padding-left:12px; padding-right:12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading">লোড হচ্ছে...</div>
+</div>
+
+<script>
+const bnMap = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+function bn(s){ return String(s).replace(/[0-9]/g, d => bnMap[d]); }
+
+function formatTaka(n){
+  n = Math.round(Number(n) || 0);
+  const neg = n < 0;
+  n = Math.abs(n);
+  let s = String(n);
+  let last3 = s.slice(-3);
+  let rest = s.slice(0, -3);
+  if (rest !== '') {
+    rest = rest.replace(/\B(?=(\d{2})+(?!\d)$)/g, ',');
+    last3 = ',' + last3;
+  }
+  return (neg ? '-' : '') + bn(rest + last3) + ' টাকা';
+}
+
+function formatDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return bn(`${d}/${m}/${y}`);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function sumAmount(list){
+  return (list || []).reduce((s,e) => s + Number(e.amount||0), 0);
+}
+
+function renderTable(rows, emptyText){
+  if(!rows || rows.length === 0){
+    return `<tr class="empty-row"><td colspan="3">${emptyText}</td></tr>`;
+  }
+  return rows.slice().sort((a,b) => a.date.localeCompare(b.date)).map(e => `
+    <tr>
+      <td class="date">${formatDate(e.date)}</td>
+      <td>${escapeHtml(e.desc)}</td>
+      <td class="amt">${formatTaka(e.amount)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderKhata(k){
+  const totalExpense = sumAmount(k.expenses);
+  const totalDeposit = k.hasDeposits ? sumAmount(k.deposits) : null;
+  const remaining = k.hasDeposits ? (totalDeposit - totalExpense) : null;
+
+  let depositsBlock = '';
+  if(k.hasDeposits){
+    depositsBlock = `
+      <div class="section-label">জমা</div>
+      <table>
+        <thead><tr><th>তারিখ</th><th>বিবরণ</th><th class="amt">টাকা</th></tr></thead>
+        <tbody>${renderTable(k.deposits, 'কোনো জমা নেই')}</tbody>
+      </table>
+    `;
+  }
+
+  return `
+    <div class="khata">
+      <div class="khata-head">
+        <div>
+          <div class="khata-title">${escapeHtml(k.name)}</div>
+          ${k.note ? `<div class="khata-note">${escapeHtml(k.note)}</div>` : ''}
+        </div>
+        <span class="pill ${k.closed ? 'closed' : 'open'}">${k.closed ? 'সম্পন্ন' : 'চলমান'}</span>
+      </div>
+      ${depositsBlock}
+      <div class="section-label">খরচ</div>
+      <table>
+        <thead><tr><th>তারিখ</th><th>বিবরণ</th><th class="amt">টাকা</th></tr></thead>
+        <tbody>${renderTable(k.expenses, 'এখনও কোনো খরচ নেই')}</tbody>
+      </table>
+      <div class="khata-foot">
+        ${totalDeposit != null ? `
+        <div class="foot-item">
+          <div class="foot-num deposit">${formatTaka(totalDeposit)}</div>
+          <div class="foot-label">মোট জমা</div>
+        </div>` : ''}
+        <div class="foot-item">
+          <div class="foot-num">${formatTaka(totalExpense)}</div>
+          <div class="foot-label">মোট খরচ</div>
+        </div>
+        ${remaining != null ? `
+        <div class="foot-item">
+          <div class="foot-num remain">${formatTaka(remaining)}</div>
+          <div class="foot-label">অবশিষ্ট</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+async function init(){
+  const app = document.getElementById('app');
+  try{
+    const res = await fetch('./data.json', { cache: 'no-store' });
+    const data = await res.json();
+    const khatas = data.khatas || [];
+
+    const grandExpense = khatas.reduce((s,k) => s + sumAmount(k.expenses), 0);
+    const activeKhata = khatas.find(k => !k.closed && k.hasDeposits);
+    let activeRemaining = null;
+    if(activeKhata){
+      const dep = sumAmount(activeKhata.deposits);
+      const exp = sumAmount(activeKhata.expenses);
+      activeRemaining = dep - exp;
+    }
+
+    let html = `
+      <div class="hero">
+        <div class="eyebrow">নানির চিকিৎসা</div>
+        <h1>খরচের হিসাব</h1>
+        <div class="sub">আরিফ পরিচালনা করছে</div>
+        <div class="grand-total">
+          <div class="gt-item">
+            <div class="gt-num">${formatTaka(grandExpense)}</div>
+            <div class="gt-label">সর্বমোট খরচ (এ পর্যন্ত)</div>
+          </div>
+          ${activeKhata ? `
+          <div class="gt-item">
+            <div class="gt-num" style="color:var(--amber)">${formatTaka(activeRemaining)}</div>
+            <div class="gt-label">${escapeHtml(activeKhata.name)} — অবশিষ্ট</div>
+          </div>` : ''}
+        </div>
+      </div>
+      <div>${khatas.map(renderKhata).join('')}</div>
+      <footer class="note">
+        এই পাতাটি নিয়মিত আপডেট হয় — নতুন করে খুলে দেখলে সবশেষ হিসাব পাবে।
+        ${data.lastUpdated ? `<div class="last-updated">সর্বশেষ আপডেট: ${formatDate(data.lastUpdated)}</div>` : ''}
+      </footer>
+    `;
+    app.innerHTML = html;
+  }catch(err){
+    app.innerHTML = `<div class="loading">হিসাব লোড করা যায়নি। একটু পর আবার চেষ্টা করো।</div>`;
+  }
+}
+init();
+</script>
+</body>
+</html>
