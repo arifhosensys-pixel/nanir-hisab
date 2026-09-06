@@ -41,7 +41,7 @@
   .hero .sub{ color:var(--ink-soft); font-size:14px; margin-top:8px; }
   .grand-total{ margin-top:20px; display:flex; justify-content:center; gap:28px; flex-wrap:wrap; }
   .gt-item{ text-align:center; }
-  .gt-num{ font-family:'Tiro Bangla', serif; font-size:26px; color:var(--teal); }
+  .gt-num{ font-family:'Hind Siliguri', sans-serif; font-weight:700; font-size:26px; color:var(--teal); }
   .gt-label{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
 
   .khata{
@@ -85,7 +85,7 @@
     background:rgba(0,0,0,.012);
   }
   .foot-item{ text-align:right; }
-  .foot-num{ font-size:16px; font-weight:600; }
+  .foot-num{ font-family:'Hind Siliguri', sans-serif; font-size:16px; font-weight:700; }
   .foot-label{ font-size:12px; color:var(--ink-soft); }
   .foot-num.remain{ color:var(--amber); }
   .foot-num.deposit{ color:var(--teal); }
@@ -240,7 +240,7 @@ async function init(){
       </div>
       <div>${khatas.map(renderKhata).join('')}</div>
       <footer class="note">
-        এই পাতাটি নিয়মিত আপডেট হয় — নতুন করে খুলে দেখলে সবশেষ হিসাব পাবে।
+        এই পাতাটি নিয়মিত আপডেট হয় — নতুন করে খুলে দেখলে সবশেষ হিসাব পাবেন।
         ${data.lastUpdated ? `<div class="last-updated">সর্বশেষ আপডেট: ${formatDate(data.lastUpdated)}</div>` : ''}
       </footer>
     `;
